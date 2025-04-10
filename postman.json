@@ -1,0 +1,364 @@
+{
+  "info": {
+    "name": "Book API",
+    "description": "Postman collection for comprehensive testing of CRUD operations on Book API, including edge cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Books",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/books",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response should contain data array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.be.an('array');",
+              "    pm.expect(jsonData.error).to.be.null;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Book - Valid Input",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Buku Saya\",\n  \"author\": \"Bayu Pratama\",\n  \"year\": 2022\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/books",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Response has created book\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property(\"id\");",
+              "    pm.expect(jsonData.error).to.be.null;",
+              "});",
+              "",
+              "// Save the new book ID for subsequent tests",
+              "var jsonData = pm.response.json();",
+              "pm.environment.set(\"bookId\", jsonData.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Book - Invalid Input (Missing Title and Year)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"author\": \"Bayu Pratama\" \n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/books",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Response contains validation error for title\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.include(\"title is required, year is required\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Book By ID - Valid ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/books/{{bookId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "{{bookId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response contains correct book data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.id).to.eql(parseInt(pm.environment.get(\"bookId\")));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Book By ID - Invalid ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/books/99999",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "99999"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Response contains error message\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.not.be.null;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search Books - Existing Title",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/books/search?title=Buku Saya",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "search"],
+          "query": [{ "key": "title", "value": "Buku Saya" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Response returns matching book(s)\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search Books - Title Not Found",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/books/search?title=asdkjasdkljasd",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "search"],
+          "query": [{ "key": "title", "value": "asdkjasdkljasd" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Response is an empty array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.be.an('array').that.is.empty;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Book - Valid Data",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Buku Baru Saya\",\n  \"author\": \"Bayu Kedua\",\n  \"year\": 2024\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/books/{{bookId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "{{bookId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Updated title is correct\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.title).to.eql(\"Buku Baru Saya\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Book - ID Not Found",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Bukan Buku Baru Saya\",\n  \"author\": \"Bukan Bayu Kedua\",\n  \"year\": 2025\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/books/99999",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "99999"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Book - Valid ID",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "http://localhost:8080/books/{{bookId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "{{bookId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Success message returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.message).to.include(\"deleted\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Book - ID Not Found",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "http://localhost:8080/books/99999",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["books", "99999"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
